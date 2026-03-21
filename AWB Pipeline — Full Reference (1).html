@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AWB Pipeline — Full Reference</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:14px;line-height:1.6;background:#f4f4f0;color:#1a1a1a}
+header{background:#1a1a2e;color:#fff;padding:16px 24px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{font-size:16px;font-weight:600;letter-spacing:.3px}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;transition:.15s}
+nav button:hover,nav button.active{background:rgba(255,255,255,.28)}
+.container{max-width:1100px;margin:0 auto;padding:24px 16px}
+.stage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.stage-card{background:#fff;border-radius:8px;border:1px solid #e0e0d8;overflow:hidden;cursor:pointer;transition:.15s}
+.stage-card:hover{border-color:#888;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.card-header{padding:12px 16px;display:flex;align-items:center;gap:10px}
+.stage-num{font-size:11px;font-weight:700;background:#1a1a2e;color:#fff;padding:2px 7px;border-radius:3px;letter-spacing:.5px;white-space:nowrap}
+.card-title{font-weight:600;font-size:13px}
+.card-meta{padding:8px 16px 12px;font-size:12px;color:#555;border-top:1px solid #f0f0ea}
+.badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600;margin-right:4px}
+.badge-fast{background:#d4edda;color:#155724}
+.badge-slow{background:#f8d7da;color:#721c24}
+.badge-med{background:#fff3cd;color:#856404}
+.badge-info{background:#d1ecf1;color:#0c5460}
+.badge-warn{background:#fff3cd;color:#856404}
+.detail-panel{display:none;background:#fff;border-radius:8px;border:1px solid #e0e0d8;margin-top:16px;padding:0}
+.detail-panel.open{display:block}
+.detail-header{padding:14px 20px;background:#1a1a2e;color:#fff;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center}
+.detail-header h2{font-size:15px}
+.detail-header button{background:rgba(255,255,255,.15);border:none;color:#fff;padding:4px 10px;border-radius:3px;cursor:pointer;font-size:12px}
+.detail-body{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.detail-body{grid-template-columns:1fr}}
+.section-box{background:#f9f9f5;border:1px solid #e8e8e0;border-radius:6px;padding:14px}
+.section-box h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#555;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e8e8e0}
+.section-box p,.section-box li{font-size:13px;color:#333;line-height:1.65;margin-bottom:6px}
+.section-box ul{padding-left:16px}
+.section-box li{margin-bottom:4px}
+.cost-bar{display:flex;align-items:center;gap:8px;margin:4px 0}
+.cost-bar-label{font-size:12px;color:#555;width:100px;flex-shrink:0}
+.cost-bar-track{flex:1;background:#eee;border-radius:2px;height:8px}
+.cost-bar-fill{height:8px;border-radius:2px;background:#4a7fb5;transition:.3s}
+.log-example{font-family:monospace;font-size:11px;background:#1a1a2e;color:#b8d4f8;padding:10px 12px;border-radius:4px;margin-top:8px;white-space:pre-wrap;line-height:1.7}
+.log-highlight{color:#ffd700}
+.log-good{color:#98fb98}
+.log-warn{color:#ffa07a}
+.setting-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid #eee;font-size:12px}
+.setting-row:last-child{border-bottom:none}
+.setting-name{font-family:monospace;color:#2563eb;font-weight:600}
+.setting-val{font-family:monospace;color:#555}
+.setting-effect{font-size:11px;color:#777;margin-top:2px;grid-column:1/-1}
+.pill{display:inline-block;padding:1px 6px;border-radius:10px;font-size:11px;font-weight:600;margin:2px}
+.pill-high{background:#d4edda;color:#155724}
+.pill-med{background:#fff3cd;color:#856404}
+.pill-low{background:#f8d7da;color:#721c24}
+.flow-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0}
+.flow-box{background:#e8f0fe;border:1px solid #c5d8f8;border-radius:4px;padding:3px 8px;font-size:12px;font-weight:500;color:#1a3a6e;white-space:nowrap}
+.flow-arrow{color:#888;font-size:14px}
+.flow-box.exit{background:#d4edda;border-color:#a3cfbb;color:#155724}
+.flow-box.slow{background:#fff3cd;border-color:#ffc107;color:#856404}
+.flow-box.danger{background:#f8d7da;border-color:#f5c6cb;color:#721c24}
+.timing-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.timing-table th{background:#f0f0ea;padding:6px 8px;text-align:left;font-weight:600;border-bottom:2px solid #ddd}
+.timing-table td{padding:5px 8px;border-bottom:1px solid #eee;vertical-align:top}
+.timing-table tr:last-child td{border-bottom:none}
+.dpi-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.dpi-table th{background:#1a1a2e;color:#fff;padding:5px 8px;text-align:left}
+.dpi-table td{padding:4px 8px;border-bottom:1px solid #eee}
+.dpi-table tr:nth-child(even) td{background:#f9f9f5}
+.dpi-highlight{background:#fff3cd!important}
+.tabs{display:flex;gap:2px;border-bottom:2px solid #e0e0d8;margin-bottom:16px}
+.tab-btn{background:none;border:none;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;color:#666;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab-btn.active{color:#1a1a2e;border-bottom-color:#1a1a2e}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.alert{padding:10px 12px;border-radius:4px;font-size:12px;margin-bottom:10px}
+.alert-info{background:#d1ecf1;border-left:3px solid #17a2b8;color:#0c5460}
+.alert-warn{background:#fff3cd;border-left:3px solid #ffc107;color:#856404}
+.alert-danger{background:#f8d7da;border-left:3px solid #dc3545;color:#721c24}
+.alert-good{background:#d4edda;border-left:3px solid #28a745;color:#155724}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AWB Pipeline — Full Stage Reference</h1>
+  <nav>
+    <button class="active" onclick="showSection('all')">All Stages</button>
+    <button onclick="showSection('speed')">Speed Guide</button>
+    <button onclick="showSection('settings')">Settings Map</button>
+    <button onclick="showSection('logs')">Log Decoder</button>
+    <button onclick="showSection('debug')">Debug Patterns</button>
+  </nav>
+</header>
+
+<div class="container">
+
+<!-- ALL STAGES VIEW -->
+<div id="sec-all">
+<div class="alert alert-info" style="margin-bottom:16px">
+  <strong>How to use this:</strong> Click any stage card to expand its full detail — what it does, what it costs, what settings control it, example log lines, and what to look for when things go wrong.
+</div>
+
+<div class="stage-grid" id="stage-grid"></div>
+<div id="detail-panel" class="detail-panel"></div>
+</div>
+
+<!-- SPEED GUIDE -->
+<div id="sec-speed" style="display:none">
+<h2 style="margin-bottom:16px;font-size:16px">Speed — where does time actually go?</h2>
+
+<div class="section-box" style="margin-bottom:16px">
+<h3>Render cost by DPI (A4 page, typical)</h3>
+<p style="margin-bottom:10px">Every OCR call starts with a render. The render cost is <strong>quadratic</strong> — doubling DPI multiplies pixels by 4, which roughly multiplies OCR time by 4. This is the single biggest speed lever in the whole pipeline.</p>
+<table class="dpi-table">
+<tr><th>DPI</th><th>Pixel size</th><th>Megapixels</th><th>Digit-OCR est.</th><th>General-OCR est.</th><th>Used in</th></tr>
+<tr><td>60</td><td>495×701</td><td>0.35 Mpx</td><td>~0.3s</td><td>~0.4s</td><td>Angle-detect check 4 only</td></tr>
+<tr class="dpi-highlight"><td>140</td><td>1156×1637</td><td>1.9 Mpx</td><td>~1.5s</td><td>~2.3s</td><td>Stage 3.1 probe (all 4 angles)</td></tr>
+<tr class="dpi-highlight"><td>200</td><td>1652×2338</td><td>3.9 Mpx</td><td>~3.1s</td><td>~4.6s</td><td>Stage 3.2 FastRot (new)</td></tr>
+<tr><td>320</td><td>2644×3742</td><td>9.9 Mpx</td><td>~7.9s</td><td>~11.9s</td><td>DPI_MAIN — Stage 2</td></tr>
+<tr><td>420</td><td>3470×4911</td><td>17 Mpx</td><td>~13.6s</td><td>~20.4s</td><td>DPI_STRONG — Stage 3, 4, 5, 5.5, 5.6</td></tr>
+</table>
+<p style="margin-top:8px;font-size:12px;color:#666">Times are estimates for a typical Windows i5 machine. Your machine may be faster or slower — use your actual TIMING log lines to calibrate.</p>
+</div>
+
+<div class="section-box" style="margin-bottom:16px">
+<h3>Max OCR calls per path (worst case)</h3>
+<p style="margin-bottom:10px">Each row is a path a file can take. The number in brackets is the maximum OCR calls before that stage can exit.</p>
+<table class="timing-table">
+<tr><th>Path</th><th>Max OCR calls</th><th>Estimated time</th><th>Log method contains</th></tr>
+<tr><td>Filename match</td><td>0</td><td>&lt;3s (stability check)</td><td>Filename</td></tr>
+<tr><td>Text layer match</td><td>0</td><td>0.05–0.6s</td><td>Text-Layer-*</td></tr>
+<tr><td>Stage 2 clean hit (PSM6)</td><td>1 digit at DPI_MAIN</td><td>8–16s</td><td>OCR-Main-PSM6-Clean-Exact</td></tr>
+<tr><td>Stage 2 full sequence</td><td>2 digit + 1 general at DPI_MAIN</td><td>25–40s</td><td>OCR-Main-Tolerance2-*</td></tr>
+<tr><td>Stage 3 clean hit</td><td>above + 1 digit at DPI_STRONG</td><td>+14s</td><td>OCR-Strong-PSM6-Clean-Exact</td></tr>
+<tr><td>Stage 3.2 FastRot hit (fast DPI)</td><td>1 digit at 200 DPI</td><td>+3s after probe</td><td>FastRot90-PSM6-Clean-Exact</td></tr>
+<tr><td>Stage 3.2 with strong escalation</td><td>3+2 calls mixed DPI</td><td>+10–16s after probe</td><td>FastRot90-Strong-PSM6-*</td></tr>
+<tr><td>Stage 4 rotation, CERTAIN</td><td>2 digit + 1 general at DPI_STRONG</td><td>+35–50s per angle</td><td>OCR-Rotation-90-*</td></tr>
+<tr><td>Stage 4 rotation, UNCERTAIN (all 3 angles)</td><td>6 digit + 3 general at DPI_STRONG</td><td>+100–150s</td><td>OCR-Rotation-180-*</td></tr>
+<tr><td>Stage 5.6 Airway, 3 crops × 3 rotations</td><td>15 OCR calls</td><td>up to 60s (capped)</td><td>OCR-AirwayLabel-Rot*</td></tr>
+</table>
+</div>
+
+<div class="section-box">
+<h3>Scheduling tier timing</h3>
+<div class="alert alert-info">Fast lane only runs Stages 0–3. If those fail, the file waits in the deferred queue. This means your inbox is drained quickly for easy docs while hard docs queue up and run one-at-a-time when the queue is empty.</div>
+<table class="timing-table">
+<tr><th>Tier</th><th>Runs when</th><th>Time limit</th><th>On timeout</th></tr>
+<tr><td>Fast lane</td><td>Always first</td><td>No limit (Stages 0–3 only, naturally short)</td><td>File deferred to long-pass</td></tr>
+<tr><td>Long pass</td><td>Fast queue empty</td><td>75s (LONG_PASS_TIMEOUT_SECONDS)</td><td>State saved, file deferred to third-pass</td></tr>
+<tr><td>Third pass</td><td>Both queues empty</td><td>No limit</td><td>Runs to completion</td></tr>
+</table>
+</div>
+</div>
+
+<!-- SETTINGS MAP -->
+<div id="sec-settings" style="display:none">
+<h2 style="margin-bottom:16px;font-size:16px">Settings — what each one actually controls</h2>
+
+<div class="section-box" style="margin-bottom:16px">
+<h3>DPI Settings (biggest impact on speed)</h3>
+<div class="setting-row"><span class="setting-name">OCR_DPI_MAIN</span><span class="setting-val">e.g. 320</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">The DPI used for Stage 2 (OCR Main). Every digit in the pipeline starts from here. Lowering from 320→200 cuts Stage 2 time by ~60%. Risk: small or faint text may not resolve. Start any DPI reduction tests at 240 first.</p>
+<div class="setting-row"><span class="setting-name">OCR_DPI_STRONG</span><span class="setting-val">e.g. 420</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">Used in Stage 3, Stage 4 (rotation), Stage 5 (table), Stage 5.5 (upscale), Stage 5.6 (airway). Reducing this from 420→300 saves ~9s per OCR call across all those stages. Risk: harder-to-read documents may miss. Set to 300 and test on your worst scans.</p>
+<div class="setting-row"><span class="setting-name">ROTATION_FAST_DPI</span><span class="setting-val">200 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">Used only in Stage 3.2 (the new fast rotated pass). This is already at a reasonable default. If rotated docs still miss here but catch in Stage 4, bump to 240. If Stage 3.2 is too slow, drop to 180.</p>
+<div class="setting-row"><span class="setting-name">ROTATION_PROBE_DPI</span><span class="setting-val">140 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">Used only for the probe (Stage 3.1) — just to determine the angle. Does not need to be high. 140 is a good balance. Raising this makes the probe more accurate but slower. 100 is too low for reliable digit scoring. 160 is the practical ceiling.</p>
+</div>
+
+<div class="section-box" style="margin-bottom:16px">
+<h3>Probe / Rotation Certainty Settings</h3>
+<div class="setting-row"><span class="setting-name">ROTATION_PROBE_CERTAIN_MARGIN</span><span class="setting-val">300 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">Score gap between best and second-best angle needed to call it CERTAIN. At CERTAIN, Stage 4 only tries the one best angle — saves 2 full rotation OCR sequences. If you're seeing docs classified as CERTAIN but matched at the wrong angle, lower this. If UNCERTAIN is too common (Stage 4 running all angles), raise this.</p>
+<div class="setting-row"><span class="setting-name">ROTATION_PROBE_LIKELY_MARGIN</span><span class="setting-val">120 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">Score gap needed for LIKELY. Stage 4 still only tries the one angle. Below this is UNCERTAIN. Look at your probe score logs: if you regularly see margins of 80–150, adjusting this threshold can push more files to LIKELY and save 2 rotation sequences each.</p>
+<div class="setting-row"><span class="setting-name">ROTATION_PROBE_MIN_FLIP_MARGIN</span><span class="setting-val">80 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">Minimum score gap before the probe will declare a non-zero angle as the base angle. If the non-zero angle beats 0° by less than 80 points, the probe falls back to 0°. Raise this to make the probe more conservative about calling rotation (fewer false rotations). Lower to make it more aggressive.</p>
+<div class="setting-row"><span class="setting-name">ROTATION_PROBE_DIGIT_CLEAR_MARGIN</span><span class="setting-val">24 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">If 0° wins on digit count by this margin, skip the expensive text OCR in the probe entirely. This is the fast-path inside Stage 3.1. On most upright documents 0° wins by much more than 24 digits — this fast path fires very often and saves ~3s per file.</p>
+</div>
+
+<div class="section-box" style="margin-bottom:16px">
+<h3>Tolerance / Matching Settings</h3>
+<div class="setting-row"><span class="setting-name">TOLERANCE_HIGH_MAX_DISTANCE</span><span class="setting-val">2 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">Max digit difference allowed when matching a HIGH-confidence candidate to the DB. Distance 1 = one digit wrong (e.g. OCR read 3 as 8). Distance 2 = two digits wrong. Raising to 3 would catch more OCR errors but risks false matches. Only HIGH candidates (found near a label keyword) are allowed distance 2.</p>
+<div class="setting-row"><span class="setting-name">TOLERANCE_STANDARD_MAX_DISTANCE</span><span class="setting-val">1 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">STANDARD candidates (found by bare number scanning, no label context) only get distance 1. This is intentionally tight — STANDARD numbers include lots of noise like product codes and phone numbers.</p>
+<div class="setting-row"><span class="setting-name">MIN_STAGE_HITS_HIGH_TOL1</span><span class="setting-val">1 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">For a HIGH candidate at distance 1 (one digit off), it needs to have been seen in at least 1 stage. This is permissive — a single clear OCR pass near an AWB label with one digit error is accepted. Raising to 2 would require two independent OCR passes to agree.</p>
+<div class="setting-row"><span class="setting-name">MIN_STAGE_HITS_HIGH_TOL2</span><span class="setting-val">2 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">For a HIGH candidate at distance 2 (two digits off), needs to appear in 2 separate stages. This prevents a single noisy OCR pass from triggering a two-digit tolerance match.</p>
+<div class="setting-row"><span class="setting-name">MIN_STAGE_HITS_STANDARD_TOL</span><span class="setting-val">2 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">STANDARD candidates need 2 stage hits before tolerance matching. Even at distance 1 a STANDARD number must be confirmed by two independent OCR passes. Critical safety guard — do not lower below 2.</p>
+<div class="setting-row"><span class="setting-name">REQUIRE_SINGLE_STANDARD_CANDIDATE_FOR_TOL</span><span class="setting-val">True (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">If True, tolerance matching on STANDARD candidates only fires when there is exactly one STANDARD candidate in the pool. If there are two STANDARD candidates, even with 3+ stage hits each, no tolerance match is made — needs review instead. This prevents picking the wrong number when the doc is ambiguous.</p>
+</div>
+
+<div class="section-box">
+<h3>Scheduling / Timeout Settings</h3>
+<div class="setting-row"><span class="setting-name">LONG_PASS_TIMEOUT_SECONDS</span><span class="setting-val">75.0 (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">Files in long-pass are interrupted at 75s and their state is saved. They resume in third-pass (no timeout). Raising this means fewer files go to third-pass but each long-pass file blocks new arrivals longer. Lowering means more files hit third-pass. 75s is set to allow Stage 4 at CERTAIN (one angle, ~35-50s) to complete without timeout.</p>
+<div class="setting-row"><span class="setting-name">ENABLE_INBOX_TWO_PASS</span><span class="setting-val">True (default)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">Enables the three-tier scheduling. If False, every file runs the full pipeline immediately in one pass — simple but slow for batches.</p>
+<div class="setting-row"><span class="setting-name">MAX_CONTEXT_RESCUE_MS</span><span class="setting-val">60000 (default, 60s)</span></div>
+<p style="font-size:12px;color:#555;margin:4px 0 10px">Time cap for the airway label rescue (Stage 5.6). Without this, a 3-crop × 3-rotation airway rescue could take 150+ seconds. 60s is the hard ceiling. If you see [AIRWAY-LABEL] Time budget reached in logs, the rescue was running too long — either the crop regions are wrong for your document type or DPI_STRONG is too high.</p>
+</div>
+</div>
+
+<!-- LOG DECODER -->
+<div id="sec-logs" style="display:none">
+<h2 style="margin-bottom:16px;font-size:16px">Log Decoder — what every line means</h2>
+
+<div class="section-box" style="margin-bottom:16px">
+<h3>The TIMING line — one per file</h3>
+<div class="log-example">[2026-03-20 14:32:15] <span class="log-good">AWB MATCHED (OCR-Main-PSM6-Clean-Exact)</span>: 399617498819 (invoice_001.pdf)
+[2026-03-20 14:32:15] [TIMING] file=invoice_001.pdf method=OCR-Main-PSM6-Clean-Exact route=PROCESSED
+  filename_ms=2.1  text_layer_ms=340.5  <span class="log-highlight">ocr_main_ms=8420.1</span>  ocr_strong_ms=0.0
+  ocr_context_ms=0.0  rotation_ms=0.0  total_active_ms=11762.7</div>
+<table class="timing-table" style="margin-top:12px">
+<tr><th>Field</th><th>Covers these stages</th><th>What's hidden inside</th></tr>
+<tr><td>filename_ms</td><td>Stage 0 only</td><td>Just the regex. Should be &lt;5ms always.</td></tr>
+<tr><td>text_layer_ms</td><td>Stage 1 only</td><td>PDF text extraction + spatial sort comparison. 50–600ms for real text; &lt;30ms if page has no text layer.</td></tr>
+<tr><td>ocr_main_ms</td><td>Stage 2 + Stage 3.2 FastRot (combined via +=)</td><td>Stage 3.2 results accumulate here, not in rotation_ms. If this is 25s+ on a rotated doc, Stage 3.2 strong escalation ran.</td></tr>
+<tr><td>ocr_strong_ms</td><td>Stage 3 only</td><td>If 30s+, invert passes ran (doc had no quality candidates after normal passes).</td></tr>
+<tr><td>ocr_context_ms</td><td>Stage 3.5 ROI + Stage 5.5 Upscale + Stage 5 Table + Stage 5.6 Airway — ALL lumped together</td><td>You cannot separate these from the TIMING line alone. Look at which method name appears to know which stage matched, or look at SNAPSHOT lines to see candidate progression.</td></tr>
+<tr><td>rotation_ms</td><td>Stage 4 _run_rotation_passes only (final angle fallback also included)</td><td>Stage 3.2 FastRot does NOT accumulate here. If 60s+, UNCERTAIN certainty with multiple angles ran.</td></tr>
+<tr><td>total_active_ms</td><td>Everything wall-clock</td><td>Gap = file stability check (2s baseline) + Excel log writes (0.3–1s) + file move. Minimum overhead is ~2.5s even on a zero-OCR match.</td></tr>
+</table>
+</div>
+
+<div class="section-box" style="margin-bottom:16px">
+<h3>Key log markers and what triggers them</h3>
+<table class="timing-table">
+<tr><th>Log marker</th><th>Means</th><th>Action</th></tr>
+<tr><td>[TEXT-LAYER] Recovered via set_rotation(90)</td><td>PDF had no text until page rotation was changed. Rare — happens with vector PDFs exported rotated.</td><td>Good. Check text_layer_ms — should still be fast.</td></tr>
+<tr><td>[TEXT-LAYER] Using spatially sorted word order</td><td>Multi-column PDF where sorting by position improved candidate extraction.</td><td>Good. No action needed.</td></tr>
+<tr><td>[ANGLE-DETECT] PDF metadata rotation=90°</td><td>Pre-rotation hint from PDF metadata. Very reliable.</td><td>Good. Will narrow probe and prioritise correct angle.</td></tr>
+<tr><td>[ANGLE-DETECT] Pixel variance col=X &gt;&gt; row=Y</td><td>60-DPI scan shows document is probably rotated. Less reliable than metadata.</td><td>Info. Cross-reference with probe result.</td></tr>
+<tr><td>[ROTATION-PROBE] certainty=UNCERTAIN margin=45</td><td>Probe could not determine angle confidently. All 3 non-zero angles will run in Stage 4.</td><td>Watch rotation_ms — if it's 90s+, consider raising ROTATION_PROBE_LIKELY_MARGIN so more files get LIKELY instead of UNCERTAIN.</td></tr>
+<tr><td>[ROTATION-PROBE] certainty=CERTAIN margin=892</td><td>Probe is very confident. Only one angle runs in Stage 4.</td><td>Good. rotation_ms should be ~35–50s for one angle.</td></tr>
+<tr><td>[FAST] Skipping OCR-Main PSM11</td><td>PSM6 found nothing but text layer already had quality candidates. PSM11 skipped.</td><td>Speed win. Normal behaviour.</td></tr>
+<tr><td>[FAST-LANE] Deferred after Stage 3</td><td>File failed Stages 0-3 and is queued for long-pass.</td><td>Normal for hard docs. Check how many files are doing this per batch.</td></tr>
+<tr><td>[TIMEOUT] X exceeded 75s budget</td><td>Long-pass file hit the time cap. State saved, goes to third-pass.</td><td>Check rotation_ms + ocr_context_ms. Usually means Stage 4 UNCERTAIN with poor-quality scan.</td></tr>
+<tr><td>[AIRWAY-LABEL] Time budget reached</td><td>Airway rescue ran for 60s without matching.</td><td>The AWB is not in the expected crop regions. Could be a non-standard document layout.</td></tr>
+<tr><td>[EDM-AWB-FALLBACK] Token expired</td><td>Bearer token is stale. EDM_TOKEN_EXPIRED.flag was written.</td><td>Refresh token in data/token.txt. Files that would have matched via EDM are going to needs-review.</td></tr>
+</table>
+</div>
+
+<div class="section-box">
+<h3>Reading a NEEDS REVIEW dump</h3>
+<div class="log-example">NO MATCH FOUND -> Needs review: scan_002.pdf
+  Candidates tried: ['123456789012', '399617498819', '000123456789']
+  Candidate <span class="log-highlight">399617498819</span> | <span class="log-good">conf=HIGH</span> | stages=['OCR-Main-PSM6', 'OCR-Strong-PSM11']
+  Candidate 123456789012 | conf=STANDARD | stages=['OCR-Main-PSM6']
+  Candidate 000123456789 | conf=STANDARD | stages=['OCR-Rotation-90-Invert-PSM6']
+  Quarantined noisy candidates: ['555123456789']
+  Quarantined 555123456789 | stages=['OCR-Rotation-180-Invert-PSM6']</div>
+<table class="timing-table" style="margin-top:12px">
+<tr><th>What you see</th><th>What it means</th><th>What to do</th></tr>
+<tr><td>HIGH + 2 stages, not in DB</td><td>Pipeline is confident this is the AWB but it's not in the Excel list yet.</td><td>Add AWB to Excel DB. This is the most common cause of needs-review on known shipments.</td></tr>
+<tr><td>HIGH + 1 stage, not in DB</td><td>Found near a label keyword once. Likely real but unconfirmed.</td><td>Check the document manually. If correct, add to DB.</td></tr>
+<tr><td>STANDARD + 3 stages, not in DB</td><td>Multiple OCR passes saw the same number — strong evidence it's real but it's not in DB.</td><td>Verify manually. If it's a new AWB that hasn't been entered yet, that's the cause.</td></tr>
+<tr><td>STANDARD + 1 stage, starting with 0</td><td>Almost certainly OCR noise. Leading zero = disqualified from exact matching. Can still reach tolerance.</td><td>Check if the real AWB is 3 in place of 0 at position 1 (very common OCR error: 3 reads as 0).</td></tr>
+<tr><td>Quarantined candidates</td><td>These numbers were seen only in Invert or 180°/270° rotation passes which tend to be noisy. They were excluded from matching. If one of them looks correct, the pipeline was right to quarantine it but the document needs manual review.</td><td>If quarantined number is correct, it means the doc is genuinely hard — increase DPI_STRONG or check that the AWB is in the DB.</td></tr>
+<tr><td>No candidates at all</td><td>Every OCR pass produced zero recognisable 12-digit numbers.</td><td>Check the scan quality — very likely a blank or corrupted PDF. Could also be a document type the pipeline has never seen (e.g. handwritten, non-standard format).</td></tr>
+</table>
+</div>
+</div>
+
+<!-- DEBUG PATTERNS -->
+<div id="sec-debug" style="display:none">
+<h2 style="margin-bottom:16px;font-size:16px">Debug — matching symptoms to causes</h2>
+
+<div class="section-box" style="margin-bottom:16px">
+<h3>Scenario: rotated docs are slow</h3>
+<div class="alert alert-warn">Symptom: rotation_ms is 60–120s. Files with [ROUTE] ROTATED take much longer than [ROUTE] UPRIGHT.</div>
+<p style="margin-bottom:8px">Check these in order:</p>
+<ol style="padding-left:16px;font-size:13px">
+<li style="margin-bottom:6px"><strong>What is the probe certainty?</strong> Look for [ROTATION-PROBE] certainty=. If UNCERTAIN, all 3 non-zero angles run in Stage 4. If LIKELY or CERTAIN, only 1 angle runs. UNCERTAIN with a bad scan = 3× the cost.</li>
+<li style="margin-bottom:6px"><strong>Is Stage 3.2 matching early?</strong> Look for FastRot* in the method name. If yes, the fix worked and you're on the fast path. If you see [ROUTE] ROTATED but no FastRot in the method, Stage 3.2 found nothing — likely a low-quality scan that needs the full DPI.</li>
+<li style="margin-bottom:6px"><strong>What is DPI_STRONG?</strong> If it's 420, each rotation pass takes ~14s for digit OCR + ~20s for general OCR. 3 angles = ~100s before you even get to table/upscale. Reducing DPI_STRONG to 300 cuts this to ~50s for 3 angles.</li>
+<li style="margin-bottom:6px"><strong>Is ROTATION_PROBE_CERTAIN_MARGIN too high?</strong> If most rotated docs have clear probe scores (margin 200–400) but you've set CERTAIN at 500, they all fall to LIKELY or UNCERTAIN and run unnecessary extra angles.</li>
+</ol>
+</div>
+
+<div class="section-box" style="margin-bottom:16px">
+<h3>Scenario: high needs-review rate</h3>
+<div class="alert alert-warn">Symptom: more than 2-3 out of 50 files going to needs-review.</div>
+<ol style="padding-left:16px;font-size:13px">
+<li style="margin-bottom:6px"><strong>Check the candidate dump.</strong> If HIGH candidates are present but not in DB — add them. This is by far the most common cause and has nothing to do with the pipeline.</li>
+<li style="margin-bottom:6px"><strong>Check for leading-zero pattern.</strong> Candidate 099617498819 when real AWB is 399617498819 = OCR misread. This can still match via tolerance (leading-zero rule is relaxed for tolerance pools). If it's not matching, MIN_STAGE_HITS_HIGH_TOL1 may need lowering to 1 for distance-1 HIGH candidates — it's already at 1 by default so check stage hits count.</li>
+<li style="margin-bottom:6px"><strong>Are all needs-review docs of a specific type?</strong> If it's always the same document format, the crop regions in Stage 5.6 (airway rescue) may not cover where the AWB sits on that layout.</li>
+<li style="margin-bottom:6px"><strong>Is EDM token expired?</strong> Files that would catch at Stage 6 go straight to needs-review. Check logs for "Token expired".</li>
+</ol>
+</div>
+
+<div class="section-box" style="margin-bottom:16px">
+<h3>Scenario: false matches</h3>
+<div class="alert alert-danger">Symptom: a file gets matched to the wrong AWB and moved to PROCESSED with an incorrect name.</div>
+<div class="alert alert-info">Note: the pipeline's primary safety guard is the DB check — the matched AWB must exist in the Excel list. A "false match" in the AWB pipeline means the OCR found a different real AWB from the DB — not a made-up number.</div>
+<ol style="padding-left:16px;font-size:13px">
+<li style="margin-bottom:6px"><strong>Check the method in logs.</strong> If method=Filename — the filename contained a different AWB number. Check your Outlook VBA macro naming logic.</li>
+<li style="margin-bottom:6px"><strong>If method=Tolerance2-*</strong> — a near-miss candidate matched via Hamming distance. If this is a wrong match, the real AWB and the matched AWB differ by only 1-2 digits AND both exist in the DB. Reduce TOLERANCE_HIGH_MAX_DISTANCE to 1 to prevent 2-digit tolerance matches.</li>
+<li style="margin-bottom:6px"><strong>If method=EDM-Exists-*</strong> — EDM confirmed a candidate that was wrong. This means a wrong number was marked HIGH-confidence (found near a label keyword) and EDM said it exists. Very rare. Check the document to understand what text was near the label.</li>
+</ol>
+</div>
+
+<div class="section-box">
+<h3>Scenario: ocr_context_ms is very high (50s+)</h3>
+<div class="alert alert-warn">Symptom: ocr_context_ms near 60000 in TIMING lines. These are your hardest docs.</div>
+<p style="font-size:13px;margin-bottom:8px">ocr_context_ms covers ROI (3.5), Upscale (5.5), Table (5), and Airway (5.6) — all lumped together. To find which stage is dominant:</p>
+<ul style="padding-left:16px;font-size:13px">
+<li style="margin-bottom:4px">If method contains AirwayLabel → Stage 5.6 matched. The time was in airway rescue. Look for [AIRWAY-LABEL] Time budget reached — if present, the rescue hit the 60s cap before matching.</li>
+<li style="margin-bottom:4px">If method contains OCR-Rescue-Upscaled → Stage 5.5 matched. Upscale was the decisive stage — the document is a low-resolution scan that needed the 3× boost.</li>
+<li style="margin-bottom:4px">If method contains OCR-Table → Stage 5 matched. Table lines were fragmenting the text — removing them helped. Consider lowering DPI_STRONG slightly as the table pass runs at full DPI.</li>
+<li style="margin-bottom:4px">If the file went to needs-review AND ocr_context_ms is 58–60s → airway rescue ran the full 60s and found nothing. The AWB is either in an unusual position on the page or not in the DB.</li>
+</ul>
+</div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+const stages = [
+  {
+    id: 's0', num: 'Stage 0', title: 'Filename Shortcut',
+    speed: 'fast', speedLabel: 'Always <3s',
+    metaBadges: ['No OCR', 'No DB check', 'Trusted source'],
+    logField: 'filename_ms',
+    logMethod: 'Filename',
+    what: `The very first thing the pipeline does after confirming the file is stable. It runs a single pattern on the filename — looking for an isolated 12-digit number surrounded by non-digits. If found, that number IS the AWB, no questions asked.`,
+    subSteps: [
+      { name: 'Stability check', desc: 'Before any processing, waits up to 2 seconds checking the file size is stable (not still being written by Outlook/network). If the file keeps changing size, returns "unstable" and the watchdog will try again on the next event.' },
+      { name: 'Filename regex', desc: 'Pattern: (?<!\\d)(\\d{12})(?!\\d) — finds any 12-digit run that is not part of a longer number. So 400-399617498819.pdf → 399617498819 (the hyphen acts as a boundary). A file named 20260317154937279.pdf has 17 digits total with no isolated 12-digit group, so it falls through.' },
+    ],
+    settings: [
+      { name: 'None', val: '', effect: 'No settings control Stage 0. It is always attempted first on every file.' }
+    ],
+    logExample: `AWB MATCHED (Filename): 399617498819 (400-399617498819.pdf)
+[TIMING] file=400-399617498819.pdf method=Filename route=PROCESSED
+  filename_ms=1.2  text_layer_ms=0.0  ocr_main_ms=0.0 ...
+  total_active_ms=2841.5`,
+    logNote: 'filename_ms is always 1–3ms. The ~2.8s total is entirely the stability check overhead.',
+    risks: ['Someone manually drops a file named with an AWB they do not own — pipeline will match it wrong (by design, this is a workflow trust decision)','File has a timestamp or long number in name that contains an isolated 12-digit substring — will match that instead of doing OCR'],
+    impact: '~20-40% of files in a normal batch match here. Every filename match saves 8–60 seconds.'
+  },
+  {
+    id: 's1', num: 'Stage 1', title: 'Text Layer Extraction',
+    speed: 'fast', speedLabel: '50ms–600ms',
+    metaBadges: ['No OCR', 'DB check', 'Zero rendering cost'],
+    logField: 'text_layer_ms',
+    logMethod: 'Text-Layer-*',
+    what: `Most PDFs created digitally (not scans) have a hidden text layer — the actual characters embedded by the PDF creator. PyMuPDF can read this in milliseconds with no rendering. This stage extracts that text and tries to find the AWB in it before touching Tesseract at all.`,
+    subSteps: [
+      { name: '1a — Set-rotation fallback', desc: 'If the text layer comes back empty, tries rotating the PDF page metadata to 90°, 270°, then 180° — re-reads the text layer after each. Some PDFs were saved with the content stream at 90° with only a rotation flag, not a real image rotation. This catches them at zero cost. Resets rotation to 0° after.' },
+      { name: '1b — Spatial word sort', desc: 'If text is found, pulls word-level bounding boxes and re-sorts by (row, x-position). Multi-column documents have their words interleaved in the raw stream (column 1 row 1, column 2 row 1, column 1 row 2...). Sorting by position restores reading order. Compares candidate counts from both orders — uses whichever is better.' },
+      { name: '1c — 400 pattern', desc: 'Checks the text for "400-" followed immediately by 12 digits. If found, matches immediately with NO DB check — this is the one format that is unconditionally trusted (tight "400-NNNN..." format only). Labeled formats like "400 NUMBER: 123456" do NOT get this bypass — they go through DB checking.' },
+      { name: '1d — Full extraction', desc: 'Runs the full tiered extraction: HIGH candidates (found near AWB/TRACKING/AIRWAY BILL labels), STANDARD candidates (bare 12-digit numbers), then keyword-proximity check with a wide 5-line window. Checks exact DB match, then tolerance if no exact hit.' },
+    ],
+    settings: [
+      { name: 'CONTEXT_WINDOW_CHARS', val: '40', effect: 'How many characters around a found number are scanned for label keywords. 40 = 40 chars before and after the number.' },
+      { name: 'TOLERANCE_HIGH_MAX_DISTANCE', val: '2', effect: 'How many digits can differ on a HIGH candidate before tolerance fails.' },
+    ],
+    logExample: `[TEXT-LAYER] Using spatially sorted word order
+AWB MATCHED (Text-Layer-Exact-High): 399617498819 (commercial_invoice.pdf)
+[TIMING] ...  text_layer_ms=312.4  ocr_main_ms=0.0 ...  total_active_ms=3156.8`,
+    logNote: 'text_layer_ms shows only Stage 1. A match here means zero Tesseract calls — ideal outcome for digital PDFs.',
+    risks: ['Scanned PDFs have no text layer — text_layer_ms will be very low (<30ms) and nothing matches', 'Multi-column sort only helps when sorting improves candidate count — the comparison is run every time even if sorted order is not better'],
+    impact: '~15-25% of non-filename matches. All digital PDFs (not scans) should be caught here or Stage 0.'
+  },
+  {
+    id: 's2', num: 'Stage 2', title: 'OCR Main (0°)',
+    speed: 'med', speedLabel: '8–40s at DPI_MAIN',
+    metaBadges: ['Tesseract', 'DPI_MAIN', 'DB check', 'PSM 6+11'],
+    logField: 'ocr_main_ms',
+    logMethod: 'OCR-Main-*',
+    what: `The first time Tesseract runs. Renders the whole page at DPI_MAIN and runs Tesseract's digit-whitelist mode (only recognises 0–9, nothing else) to find number strings, then a general text pass for context. Always runs at 0° — assuming upright document.`,
+    subSteps: [
+      { name: 'Render at DPI_MAIN', desc: 'The PDF page is rasterised into a bitmap at DPI_MAIN pixels per inch (default ~320). This is the most expensive single operation in the fast lane. Cached — if any later stage needs the same DPI+angle, it reuses the render.' },
+      { name: 'PSM 6 digit-only', desc: 'Tesseract in "uniform block" mode with character whitelist 0123456789. Fastest PSM. Finds well-structured number blocks. Runs 400-check → clean gate → DB exact → DB tolerance.' },
+      { name: 'PSM 11 digit-only', desc: 'Tesseract in "sparse text" mode — finds isolated numbers anywhere on the page. Slower than PSM 6 but catches numbers not in a uniform block. SKIPPED if PSM 6 found nothing AND text layer already has quality candidates (no point running a slower mode on a document where we already have good leads).' },
+      { name: 'Soft text pass', desc: 'Runs Tesseract general OCR (no whitelist, reads all characters) in PSM 11. This extracts label context: if the number 399617498819 appears after "AWB NO:", the label promotes it from STANDARD to HIGH confidence. Only runs when no quality candidates found yet.' },
+    ],
+    settings: [
+      { name: 'OCR_DPI_MAIN', val: 'e.g. 320', effect: 'BIGGEST lever. 320→240 cuts Stage 2 time by ~55%. Risk: small text may not resolve. 240 is a safe test value.' },
+      { name: 'OCR_MAIN_PSMS', val: '(6, 11)', effect: 'Which PSMs to run. Default (6,11). Set to (6,) to skip PSM11 entirely — saves ~8s per file but misses sparse-layout docs.' },
+    ],
+    logExample: `[SNAPSHOT] OCR-Main-PSM6-Clean: count=1 sample=['399617498819']
+AWB MATCHED (OCR-Main-PSM6-Clean-Exact): 399617498819 (scan_001.pdf)
+[TIMING] ...  ocr_main_ms=8420.1  ...`,
+    logNote: 'ocr_main_ms=8420 = ~8.4s. At DPI_MAIN=320, that is about right for one PSM6 digit pass + render. If you see 25s+, PSM11 + soft pass ran.',
+    risks: ['Table lines fragment digits — OCR reads "399" and "617498819" separately, neither matches as 12 digits', 'Dark background / white text fails digit-only OCR — not inverted at this stage', 'DPI_MAIN too high = slow. DPI_MAIN too low = misses small text.'],
+    impact: 'Should catch 60-70% of all files that reach OCR. If this rate is lower, DPI_MAIN may be wrong for your scan quality.'
+  },
+  {
+    id: 's3', num: 'Stage 3', title: 'OCR Strong (0°)',
+    speed: 'slow', speedLabel: '15–60s at DPI_STRONG',
+    metaBadges: ['Tesseract', 'DPI_STRONG', 'DB check', 'Invert option'],
+    logField: 'ocr_strong_ms',
+    logMethod: 'OCR-Strong-*',
+    what: `Same structure as Stage 2 but at a higher DPI (DPI_STRONG, typically 420). Also adds inverted passes for dark-background documents. Still at 0° only. This is the last stage in the fast lane — if this fails, the file is deferred.`,
+    subSteps: [
+      { name: 'PSM 6 + PSM 11 digit-only at DPI_STRONG', desc: 'Same as Stage 2 but higher resolution. Catches text too small or low-contrast for DPI_MAIN. Runs same gate sequence: 400 → clean → exact → tolerance.' },
+      { name: 'Invert passes (conditional)', desc: 'Only runs if no quality candidates exist after normal passes. Inverts the image (black background → white, white text → black) and runs PSM 6 + PSM 11 again. For FedEx labels printed white-on-dark. Gated because on normal documents, invert just produces noise.' },
+      { name: 'Strong soft pass', desc: 'General text OCR at DPI_STRONG. Tries PSM 11 first, then PSM 6 if PSM 11 found nothing. Also runs box-level OCR (Tesseract returns individual word bounding boxes + text — the pipeline then finds AWB numbers spatially near "AWB" or "TRACKING" label tokens). This last box-level call can take 8–15s by itself.' },
+      { name: 'Fast-lane exit', desc: 'If allow_long_pass=False (fast lane mode), returns DEFERRED here regardless of outcome. File goes to the deferred queue for long-pass processing. This keeps the fast lane moving.' },
+    ],
+    settings: [
+      { name: 'OCR_DPI_STRONG', val: 'e.g. 420', effect: 'Controls cost of Stage 3, 4, 5, 5.5, 5.6 — everything after Stage 2. Reducing from 420→300 saves ~9s per OCR call across all those stages.' },
+      { name: 'OCR_STRONG_PSMS', val: '(6, 11)', effect: 'Same as OCR_MAIN_PSMS but for Stage 3 normal passes.' },
+    ],
+    logExample: `[SNAPSHOT] OCR-Strong-Invert-PSM6: count=0 sample=[]
+[FAST-LANE] Deferred after Stage 3 (no match at 0°): difficult_scan.pdf`,
+    logNote: 'Invert PSM6 snapshot with count=0 confirms the invert was tried and found nothing. This is normal for upright non-inverted docs.',
+    risks: ['Box-level OCR call (extract_candidates_from_ocr_data) is slow — up to 15s. Fires when no candidates found after all digit passes.', 'Invert adds 15–30s if document has no dark-background text — pure noise cost.'],
+    impact: 'Catches another 10-15% of files. If you see many files going to DEFERRED from Stage 3, that is correct behaviour — they will catch in Stage 3.2 or later.'
+  },
+  {
+    id: 's31', num: 'Stage 3.1', title: 'Rotation Probe',
+    speed: 'med', speedLabel: '4–15s at 140 DPI',
+    metaBadges: ['Low DPI', 'All 4 angles', 'No DB check', 'Sets route'],
+    logField: 'ocr_main_ms (partial)',
+    logMethod: 'Probe-400 or Probe-Exact-High',
+    what: `Only runs after Stage 3 fails. Renders at low DPI (140 by default) and quickly tests all four orientations (0°, 90°, 180°, 270°) to find which angle has the most recognisable content. This determines the base_angle for everything that follows.`,
+    subSteps: [
+      { name: 'Digit scoring all 4 angles', desc: 'Runs digit-only OCR at 140 DPI for each angle. Counts how many digit characters were found. The angle with the highest digit count is likely the correct orientation. If 0° clearly wins by a large margin (ROTATION_PROBE_DIGIT_CLEAR_MARGIN = 24 digits), skips the next step.' },
+      { name: 'Keyword scoring (if needed)', desc: 'If the digit counts are close, runs general OCR at each angle and scores on: digit count + (keyword hits × 120) + (word coherence × 2). Keywords like AWB, FEDEX, TRACKING each add 120 points. This heavily weights angles where real document text is readable.' },
+      { name: 'Angle narrowing', desc: 'For image-only docs (no text layer) with a strong pre-angle hint (from metadata/aspect ratio), only probes 0° and the hint angle — saves 2 OCR calls.' },
+      { name: 'Certainty decision', desc: 'Score gap between best and second-best angle → CERTAIN (≥300), LIKELY (≥120), or UNCERTAIN (<120). This controls how many angles Stage 4 will try later.' },
+      { name: 'Free early exit', desc: 'The probe already generated OCR text. Before moving on, tries to match using that text (combined digit + general). If one HIGH candidate maps to the DB → Probe-Exact-High — saves all remaining stages. This is the fastest rotated-doc match possible.' },
+    ],
+    settings: [
+      { name: 'ROTATION_PROBE_DPI', val: '140', effect: 'DPI for the probe. 140 = ~1.9Mpx, ~1.5s per OCR call. Raising to 160 improves accuracy on very small text. Lowering to 100 is too low for reliable digit scoring.' },
+      { name: 'ROTATION_PROBE_CERTAIN_MARGIN', val: '300', effect: 'Score gap needed for CERTAIN certainty. CERTAIN = only 1 angle in Stage 4. Too high = most docs fall to UNCERTAIN and all 3 angles run.' },
+      { name: 'ROTATION_PROBE_LIKELY_MARGIN', val: '120', effect: 'Score gap needed for LIKELY. Below this = UNCERTAIN (all 3 angles in Stage 4).' },
+      { name: 'ROTATION_PROBE_MIN_FLIP_MARGIN', val: '80', effect: 'Minimum gap before probe will call a non-zero angle as the base angle. Guards against calling rotation when scores are close.' },
+      { name: 'ROTATION_PROBE_DIGIT_CLEAR_MARGIN', val: '24', effect: 'If 0° wins on digit count by this many, skip text OCR entirely. Fires on most upright docs — fast path.' },
+    ],
+    logExample: `[ROTATION-PROBE] Base angle 90° selected | scores={0: 45, 90: 937, 180: 23, 270: 31}
+[ROTATION-PROBE] certainty=CERTAIN margin=892
+AWB MATCHED (Probe-Exact-High): 399617498819 (rotated_invoice.pdf)`,
+    logNote: 'Score gap of 892 (937-45) → CERTAIN. The Probe-Exact-High match means the 140-DPI OCR text already contained the AWB clearly enough to match without any further processing.',
+    risks: ['Probe at 140 DPI may not resolve small or faint text — correct angle found but early exit fails, falls to Stage 3.2', 'Documents that are uniformly noisy at all angles give UNCERTAIN scores close together'],
+    impact: 'Probe-Exact-High matches are the holy grail for rotated docs — ~4s total. Every file that hits this avoids Stage 3.2 through Stage 5.6 entirely.'
+  },
+  {
+    id: 's32', num: 'Stage 3.2', title: 'Fast Rotated OCR',
+    speed: 'med', speedLabel: '3–16s',
+    metaBadges: ['200 DPI', 'Correct angle only', 'Evidence-gated escalation'],
+    logField: 'ocr_main_ms (accumulated)',
+    logMethod: 'FastRot90-*',
+    what: `New stage. Only runs when base_angle ≠ 0° (probe found rotation). Immediately runs OCR at the correct angle using a dedicated intermediate DPI (200 by default) — fast enough to be cheap, high enough to read most printed text. Previously, rotated docs had to survive ROI + upscale + table before ever getting clean OCR at the correct angle. This fixes that.`,
+    subSteps: [
+      { name: 'Fast DPI digit passes (PSM 6 + PSM 11)', desc: 'Two digit-only OCR calls at ROTATION_FAST_DPI (200 DPI) and base_angle. Each takes ~3s. Same gate sequence: 400 → clean → exact → tolerance. An easy rotated doc (just sideways, good print quality) matches here.' },
+      { name: 'Fast DPI soft text pass', desc: 'One general OCR call at ROTATION_FAST_DPI. Extracts label context to promote STANDARD candidates to HIGH. Runs full priority including tolerance.' },
+      { name: 'Evidence gate', desc: 'Before escalating to expensive DPI_STRONG calls, checks if any candidates were found at the fast DPI. If zero candidates → no point running DPI_STRONG on the same angle. Stop here and let ROI + rescue handle it (they use different approaches, not just more DPI).' },
+      { name: 'Strong DPI escalation (conditional)', desc: 'Only when evidence was found at fast DPI but no clean match. Runs PSM 6 + PSM 11 at DPI_STRONG on the same angle. Catches cases where the document needs full resolution to resolve the exact number. Results are cached and reused by Stage 4 if it runs later.' },
+    ],
+    settings: [
+      { name: 'ROTATION_FAST_DPI', val: '200', effect: 'The dedicated DPI for this stage. 200 DPI = ~3s per OCR call vs ~14s at 420 DPI. Test: if rotated docs still miss Stage 3.2 but catch in Stage 4, bump to 240. If Stage 3.2 is too slow, drop to 180.' },
+    ],
+    logExample: `FastRot90-PSM6-Clean-Exact: 399617498819 matched at 90° (fast DPI)
+[TIMING] ...  ocr_main_ms=14230  rotation_ms=0  ...
+  total_active_ms=22450`,
+    logNote: 'rotation_ms=0 even though it is a rotated doc — FastRot accumulates into ocr_main_ms. The 14s = Stage 2 (~8s) + Stage 3.2 (~6s).',
+    risks: ['If ROTATION_FAST_DPI is too low (e.g. 140), text will not resolve clearly enough. Probe at 140 uses the same DPI but only for scoring, not for clean extraction.', 'If document has very small text or poor contrast, fast DPI finds evidence but no match, triggering DPI_STRONG escalation (+14s)'],
+    impact: 'Should cut rotated doc processing time from 30–60s to 5–15s for clean rotated docs. Directly addresses the "rotation used to be quick" issue.'
+  },
+  {
+    id: 's35', num: 'Stage 3.5', title: 'ROI Crop Pass',
+    speed: 'med', speedLabel: '5–12s',
+    metaBadges: ['DPI_STRONG', 'Cropped region', 'Both routes'],
+    logField: 'ocr_context_ms',
+    logMethod: 'OCR-ROI-ShipRow-*',
+    what: `Runs before the route split, for both UPRIGHT and ROTATED. Instead of OCR-ing the whole page, crops to rows 10–62% of the page height — where the AWB number typically appears on FedEx commercial invoices — then upscales that crop 2×. Less area = less noise from invoice line items in the bottom half.`,
+    subSteps: [
+      { name: 'Crop and upscale', desc: 'Crops (0, 10%h, full_width, 62%h) from the image at DPI_STRONG. Upscales 2× with LANCZOS resampling. The crop removes the bottom invoice section which is full of 12-digit product codes and EAN barcodes that create false candidates.' },
+      { name: '3 OCR passes on crop', desc: 'General PSM 6, General PSM 11, Digit PSM 6 — all on the cropped+upscaled image. Combined into a single text blob. Runs 400 → clean → exact → tolerance.' },
+      { name: 'Box OCR on crop', desc: 'Tesseract box-level analysis on the crop — finds numbers spatially near AWB/TRACKING label tokens. Adds any candidates found to the pool.' },
+      { name: 'Image-only rotation extension', desc: 'For image-only docs (no text layer), also tries 90° and 270° rotated crops. Helps when the probe found the doc is rotated but Stage 3.2 did not fully resolve it.' },
+    ],
+    settings: [
+      { name: 'Crop coordinates', val: 'y1=10%, y2=62%', effect: 'Hardcoded in source. If your document type has the AWB in the bottom third (unusual for FedEx), this stage will miss it consistently — would need a code change.' },
+    ],
+    logExample: `[SNAPSHOT] OCR-ROI-ShipRow: count=2 sample=['399617498819', '112233445566']
+AWB MATCHED (OCR-ROI-ShipRow-Exact-High): 399617498819 (complex_invoice.pdf)`,
+    logNote: 'count=2 in snapshot with only one DB hit → ROI caught the real AWB plus one false candidate. Still matches cleanly via Exact-High.',
+    risks: ['AWB outside the 10–62% vertical band → ROI misses, falls to rescue stages', 'Upscaling a 2× crop of an already-degraded scan rarely helps — it interpolates noise'],
+    impact: 'Catches docs where the AWB was findable at the right crop even when the full-page pass was confused by table noise.'
+  },
+  {
+    id: 'route', num: 'ROUTE', title: 'Route Decision',
+    speed: 'fast', speedLabel: 'Instant',
+    metaBadges: ['No OCR', 'Sets stage order', 'base_angle drives this'],
+    logField: 'none',
+    logMethod: '[ROUTE] log line only',
+    what: `After Stage 3.5, the pipeline chooses which order to run the remaining rescue stages. The choice is based entirely on base_angle from the probe.`,
+    subSteps: [
+      { name: 'UPRIGHT (base_angle=0)', desc: 'Order: Stage 5.5 Upscale → Stage 5 Table → Stage 4 Rotation. Logic: if the doc is upright and still failing, the problem is likely resolution (upscale helps) or table lines (table clean helps). Rotation is a last resort.' },
+      { name: 'ROTATED (base_angle≠0)', desc: 'Order: Stage 4 Rotation → Stage 5 Table → Stage 5.5 Upscale. Logic: if the doc is rotated and Stage 3.2 did not fully resolve it, full-power rotation passes are next. Table and upscale come after.' },
+    ],
+    settings: [],
+    logExample: `[ROUTE] UPRIGHT (base_angle=0°, image_only=False)
+[ROUTE] ROTATED (base_angle=90°, image_only=True)`,
+    logNote: 'image_only=True means the PDF had no text layer — relevant for narrowing the probe and for the image-only ROI extensions.',
+    risks: ['UNCERTAIN probe that picked the wrong base_angle will send the file into ROTATED route with the wrong angle first. The final fallback and other angles catch this but add time.'],
+    impact: 'This is why a CERTAIN rotated doc is now fast — it goes directly to one rotation pass and skips everything else.'
+  },
+  {
+    id: 's55', num: 'Stage 5.5', title: 'Upscale 3× Rescue',
+    speed: 'slow', speedLabel: '20–45s',
+    metaBadges: ['3× upscale', 'DPI_STRONG', 'Evidence-gated'],
+    logField: 'ocr_context_ms',
+    logMethod: 'OCR-Rescue-Upscaled-*',
+    what: `Renders at DPI_STRONG, then resizes the image to 3× using LANCZOS (high-quality interpolation). Tesseract performs better on text at 300+ pixels per character height. If the scan was at 150 DPI, rendering at 420 DPI gives ~6px per character — still below Tesseract's sweet spot. 3× upscale pushes that to ~18px.`,
+    subSteps: [
+      { name: 'Evidence guard', desc: 'Only runs when ≤1 HIGH-confidence candidate has been seen in 2+ stages. If multiple HIGH candidates exist, the problem is ambiguity, not resolution — upscaling will not help and adds time. STANDARD candidates do not block this — they are treated as noise.' },
+      { name: '3× upscale with LANCZOS', desc: 'Pillow resize with anti-aliasing. Reuses table-cleaned image from Stage 5 if available (another reason UPRIGHT route runs Stage 5 before 5.5 — the cleaned image often upscales better than the raw scan).' },
+      { name: '3 OCR passes on upscaled image', desc: 'General PSM 6, General PSM 11, Digit PSM 6. Same gate sequence. Also tries box-level OCR on the upscaled image.' },
+    ],
+    settings: [
+      { name: 'ENABLE_UPSCALED_RESCUE_PASS', val: 'True', effect: 'Set to False to disable entirely. Only useful if you know your scans are all high-resolution and upscaling never helps.' },
+    ],
+    logExample: `AWB MATCHED (OCR-Rescue-Upscaled-Clean-Exact): 399617498819 (lowres_scan.pdf)
+[TIMING] ...  ocr_context_ms=38420  ...`,
+    logNote: 'ocr_context_ms=38420 means upscale rescue took ~38s. That includes the 3 OCR calls on a very large upscaled image.',
+    risks: ['Upscaling a blurry scan interpolates blur — Tesseract reads interpolated smear, not sharp characters. If the scan is already sharp, 3× often makes little difference.', 'Very large scans at DPI_STRONG upscaled 3× can exceed memory limits on the Windows machine'],
+    impact: 'Specifically helps low-resolution scans (below 200 DPI effective). If your pipeline rarely sees those, this stage rarely fires.'
+  },
+  {
+    id: 's5', num: 'Stage 5', title: 'Table Line Removal',
+    speed: 'med', speedLabel: '8–20s',
+    metaBadges: ['cv2 required', 'DPI_STRONG', 'PSM 3'],
+    logField: 'ocr_context_ms',
+    logMethod: 'OCR-Table-*',
+    what: `Uses OpenCV computer vision to detect and remove the horizontal and vertical lines that make up invoice tables. OCR often reads table lines as characters (pipes, dashes, underscores) which break up numbers. Removing them first can make fragmented digits readable.`,
+    subSteps: [
+      { name: 'Line detection', desc: 'Converts image to binary (black/white), then uses morphological operations: horizontal kernel (60×1 pixels) to find long horizontal lines, vertical kernel (1×60 pixels) for vertical lines. Combines detected lines with bitwise OR.' },
+      { name: 'Line erasure', desc: 'Subtracts detected lines from the binary image, leaving only text. Converts back to RGB.' },
+      { name: 'PSM 3 OCR on cleaned image', desc: 'PSM 3 = auto segmentation mode. Best for documents where column layout is irregular after removing table structure. Runs full gate sequence.' },
+      { name: 'Cache cleaned image', desc: 'Stores the cleaned image in table_clean_cache. Stage 5.5 (upscale rescue) reuses this cleaned image rather than upscaling the original with table lines still present — a significant accuracy improvement.' },
+    ],
+    settings: [
+      { name: 'cv2 availability', val: 'must be installed', effect: 'If cv2 (OpenCV) is not installed, this stage is silently skipped. Log: [TABLE-PASS] cv2 unavailable — skipping table pass.' },
+    ],
+    logExample: `[TABLE-PASS] cv2 unavailable — skipping table pass.
+-- or --
+AWB MATCHED (OCR-Table-Clean-Exact): 399617498819 (gridded_invoice.pdf)`,
+    logNote: 'If you see [TABLE-PASS] cv2 unavailable in logs, install opencv-python to enable this stage.',
+    risks: ['Aggressive line removal can also erase parts of numbers that are aligned with table rules (rare)', 'Thin hairline table rules below the 60-pixel kernel threshold are not removed'],
+    impact: 'Very effective on commercial invoice formats with heavy grid lines. Documents with no visible table structure see no benefit but the stage is cheap relative to the upscale.'
+  },
+  {
+    id: 's4', num: 'Stage 4', title: 'Rotation Passes',
+    speed: 'slow', speedLabel: '35–150s depending on certainty',
+    metaBadges: ['DPI_STRONG', 'Probe-ordered', 'Certainty-gated'],
+    logField: 'rotation_ms',
+    logMethod: 'OCR-Rotation-90-*',
+    what: `Full-power OCR at multiple angles. Each angle gets digit OCR (PSM 6+11), conditional invert passes, a soft text pass, and box-level OCR. How many angles run depends on the probe certainty from Stage 3.1.`,
+    subSteps: [
+      { name: 'Angle order from certainty', desc: 'CERTAIN: only base_angle (1 angle). LIKELY: only base_angle (1 angle). UNCERTAIN: all non-zero angles in probe-score order, with pre-angle hint moved to front if applicable.' },
+      { name: 'Per-angle subpasses', desc: 'For each angle: PSM 6 digit → PSM 11 digit → (conditional) PSM 6 invert → (conditional) PSM 11 invert → soft text PSM 11 → box-level OCR. Invert passes only run when no quality candidates exist after the normal passes.' },
+      { name: 'Timeout checkpoint', desc: '_check_timeout() fires after each angle completes — not mid-pass. If past 75s, captures all accumulated state and returns TIMEOUT_DEFERRED. The file resumes in third-pass.' },
+      { name: 'Rotation soft pass + box OCR', desc: 'At the end of each angle\'s digit passes, runs general text OCR. If that also finds nothing, runs box-level OCR (find numbers near label tokens in the bounding box data).' },
+    ],
+    settings: [
+      { name: 'ENABLE_ROTATION_LAST_RESORT', val: 'True', effect: 'Set to False to disable Stage 4 entirely. Only do this if you know all your documents are upright.' },
+      { name: 'OCR_DPI_STRONG', val: 'e.g. 420', effect: 'Every call in Stage 4 uses DPI_STRONG. 3 angles × 4 subpasses × 13.6s = ~163s worst case at 420 DPI. At 300 DPI: 3 × 4 × 7s = ~84s. This is the biggest time reduction available.' },
+      { name: 'ROTATION_PROBE_CERTAIN_MARGIN', val: '300', effect: 'Determines if 1 or 3 angles run here. If CERTAIN: ~35-50s. If UNCERTAIN: ~100-150s.' },
+      { name: 'LONG_PASS_TIMEOUT_SECONDS', val: '75.0', effect: 'If one angle takes longer than 75s total pipeline time, the file times out here and goes to third-pass. Third-pass resumes at the next angle.' },
+    ],
+    logExample: `[ROTATION-PROBE] certainty=CERTAIN margin=847
+[ROTATION] Pre-angle hint 90° moved to front of rotation order
+[SNAPSHOT] OCR-Rotation-90-PSM6: count=1 sample=['399617498819']
+AWB MATCHED (OCR-Rotation-90-PSM6-Clean-Exact): 399617498819
+[TIMING] ...  rotation_ms=38420  ...`,
+    logNote: 'rotation_ms=38420 = one full rotation angle at DPI_STRONG (~14s digit PSM6 + ~14s digit PSM11 + ~10s overhead). CERTAIN so only one angle ran.',
+    risks: ['UNCERTAIN with 3 angles is the single most expensive path in the pipeline — can exceed 150s and trigger timeout', 'Invert passes on 3 angles add another 40-60s and are a common source of quarantined noise candidates'],
+    impact: 'CERTAIN/LIKELY docs now match in Stage 4 in one angle pass. The UNCERTAIN case is the remaining performance problem.'
+  },
+  {
+    id: 's56', num: 'Stage 5.6', title: 'Airway Label Rescue',
+    speed: 'slow', speedLabel: 'Up to 60s (capped)',
+    metaBadges: ['3× crop upscale', 'DPI_STRONG', 'Right-side crops', '60s budget'],
+    logField: 'ocr_context_ms',
+    logMethod: 'OCR-AirwayLabel-Rot90-RightMid-*',
+    what: `Tries to find the AWB in specific crop regions where FedEx airway bill labels typically appear. Upscales each crop 3× and runs 5 OCR passes. Has a hard 60-second time cap. Last rescue stage before EDM fallback.`,
+    subSteps: [
+      { name: '3 named crop regions', desc: 'RightMid (50–100% width, 24–62% height), UpperRight (40–100% width, 5–45% height), RightWide (32–100% width, 12–70% height). These are tuned to the typical FedEx Commercial Invoice layout where the airway bill label sits on the right side.' },
+      { name: '3 rotation variants', desc: 'Tries base_angle, then base_angle+180°, then 0°. Each crop gets all 5 OCR passes. 3 crops × 3 rotations = 9 crop attempts, each with 5 OCR calls = up to 45 OCR calls total.' },
+      { name: '5 OCR passes per crop', desc: 'General PSM 6, General PSM 11, General PSM 7 (single line, good for label rows), Digit PSM 7, Digit PSM 6. PSM 7 specifically targets single-line label text.' },
+      { name: '60s time budget', desc: 'After each crop attempt, checks elapsed time. If over 60s (MAX_CONTEXT_RESCUE_MS), stops and moves on. Without this cap, a 3×3×5 = 45-call airway rescue at DPI_STRONG would take ~600s.' },
+    ],
+    settings: [
+      { name: 'ENABLE_AIRWAY_LABEL_RESCUE', val: 'True', effect: 'Set to False to disable entirely if airway rescue is never firing (saves up to 60s on hard docs, but those hard docs go to needs-review instead).' },
+      { name: 'MAX_CONTEXT_RESCUE_MS', val: '60000 (60s)', effect: 'Hard cap on airway rescue time. If you see [AIRWAY-LABEL] Time budget reached frequently, either this cap is too low or DPI_STRONG is too high.' },
+    ],
+    logExample: `[AIRWAY-LABEL] Time budget (60000ms) reached — stopping rescue
+-- or --
+AWB MATCHED (OCR-AirwayLabel-Rot90-RightMid-Clean-Exact): 399617498819`,
+    logNote: 'If you see Time budget reached, the AWB was either in an unexpected position on this document type, or the previous stages already found a good candidate (which should have matched earlier).',
+    risks: ['Crop coordinates tuned for FedEx Commercial Invoice — non-standard layouts will miss', 'All 5 OCR calls per crop call preprocess_for_text separately (known redundancy — each call re-converts the same image)'],
+    impact: 'Catches documents where the AWB is specifically on the airway bill label section but was not found by the full-page passes (e.g. embedded in a dense label area with lots of surrounding text).'
+  },
+  {
+    id: 's6', num: 'Stage 6', title: 'EDM API Fallback',
+    speed: 'fast', speedLabel: '1–3s (or instant if cached)',
+    metaBadges: ['API call', 'HIGH only', '2+ stage hits', 'Session cached'],
+    logField: 'none (sub-ms, not tracked)',
+    logMethod: 'EDM-Exists-Persistent',
+    what: `When all OCR stages have failed to produce a clean DB match, but a single HIGH-confidence candidate was seen in 2 or more separate stages, asks the FedEx EDM API whether that AWB number exists in their system. If yes → match. The result is cached per-session so the same AWB is not queried twice.`,
+    subSteps: [
+      { name: 'Persistence check', desc: 'Scans all_tried for candidates where: length=12, not disqualified, not a date reference, confidence=HIGH, seen in 2+ stages. If exactly one such candidate → proceed. If zero → skip. If multiple → sends to needs-review (cannot distinguish which is correct).' },
+      { name: 'Cache check', desc: 'Reads EDM_AWB_EXISTS_CACHE (a JSON file). If this AWB was checked in this session, uses cached result — instant.' },
+      { name: 'API call to EDM metadata endpoint', desc: 'POST to EDM_METADATA_URL with the AWB as tracking number. Checks if any documentIds are returned. Yes → exists. No → does not exist. 401 → token expired (writes flag file). Timeout=15s.' },
+    ],
+    settings: [
+      { name: 'EDM_TOKEN', val: 'data/token.txt or .env', effect: 'If no token found, Stage 6 is skipped entirely. Files that would catch here go to needs-review. Check for [EDM] Token present at startup in logs.' },
+      { name: 'TOLERANCE_HIGH_MAX_DISTANCE + MIN_STAGE_HITS_HIGH_TOL2', val: 'see Matching', effect: 'The candidate must be HIGH confidence — meaning it was found near an AWB/TRACKING label keyword. STANDARD candidates never reach Stage 6.' },
+    ],
+    logExample: `[EDM-AWB-FALLBACK] Cache hit for 399617498819: exists=True
+AWB MATCHED (EDM-Exists-Persistent): 399617498819 (mystery_doc.pdf)
+-- or --
+[EDM-AWB-FALLBACK] Token expired while checking 399617498819
+-- or --
+[EDM-AWB-FALLBACK] Persistent candidate 399617498819 not confirmed by EDM.`,
+    logNote: 'Not confirmed by EDM can mean: wrong candidate, AWB not yet in EDM system (just created), or EDM API issue. The file goes to needs-review.',
+    risks: ['Token expiry sends all Stage 6 candidates to needs-review until token is refreshed', 'EDM API availability — if EDM is down, timeout after 15s per call', 'Newly issued AWBs may not be in EDM yet — will fail the check even when correct'],
+    impact: 'Safety net for genuinely hard documents where all OCR produced only one clear candidate. Rare but critical — prevents those files from needlessly going to manual review.'
+  },
+  {
+    id: 's7', num: 'Stage 7', title: 'Needs Review',
+    speed: 'fast', speedLabel: 'Instant',
+    metaBadges: ['Full candidate dump', 'File moved', 'Manual processing'],
+    logField: 'total_active_ms',
+    logMethod: 'No-Match',
+    what: `The pipeline exhausted all stages without finding a confirmed match. The file is moved to NEEDS_REVIEW folder. A detailed dump of every candidate seen, every stage it appeared in, and every quarantined candidate is written to the log. This dump is your primary tool for understanding why a file did not match.`,
+    subSteps: [
+      { name: 'Full candidate dump', desc: 'Logs every unique 12-digit number seen across all stages, with: confidence level (HIGH/STANDARD), list of every stage where it appeared, and whether it was quarantined.' },
+      { name: 'Quarantine report', desc: 'Lists every number that was quarantined (single-hit from noisy invert/fallback pass) and which stage generated it. Quarantined numbers were deliberately excluded from matching — seeing them in the report confirms the noise guard is working.' },
+      { name: 'Stage snapshot dump', desc: 'If LOG_STAGE_SNAPSHOTS=True (default), dumps up to 20 candidates per stage for detailed debugging.' },
+    ],
+    settings: [
+      { name: 'LOG_STAGE_SNAPSHOTS', val: 'True', effect: 'If True, [SNAPSHOT] lines are written during processing. Set to False on high-volume production to reduce log file size.' },
+      { name: 'CANDIDATE_SNAPSHOT_LIMIT', val: '20', effect: 'Max candidates shown per snapshot. Raise if you have docs with many candidates and want to see all of them.' },
+    ],
+    logExample: `NO MATCH FOUND -> Needs review: invoice_xyz.pdf
+  Candidates tried: ['399617498819']
+  Candidate 399617498819 | conf=HIGH | stages=['OCR-Main-PSM6', 'OCR-Strong-PSM11']
+  [TIMING] ...  total_active_ms=82340`,
+    logNote: 'One HIGH candidate, 2 stage hits, not in DB → AWB 399617498819 needs to be added to the Excel file. This is the most actionable needs-review diagnosis.',
+    risks: [],
+    impact: 'The dump quality determines how quickly you can diagnose and fix recurring patterns. A good dump saves hours of manual investigation.'
+  },
+];
+
+let activeId = null;
+
+function buildGrid() {
+  const grid = document.getElementById('stage-grid');
+  stages.forEach(s => {
+    const speedClass = s.speed === 'fast' ? 'badge-fast' : s.speed === 'slow' ? 'badge-slow' : 'badge-med';
+    const badges = s.metaBadges.map(b => `<span class="badge badge-info">${b}</span>`).join('');
+    grid.innerHTML += `
+      <div class="stage-card" id="card-${s.id}" onclick="toggleDetail('${s.id}')">
+        <div class="card-header">
+          <span class="stage-num">${s.num}</span>
+          <span class="card-title">${s.title}</span>
+        </div>
+        <div class="card-meta">
+          <span class="badge ${speedClass}">${s.speedLabel}</span>
+          ${badges}
+          <div style="margin-top:6px;font-size:11px;color:#777">Log field: <code>${s.logField}</code> | Method: <code>${s.logMethod}</code></div>
+        </div>
+      </div>`;
+  });
+}
+
+function toggleDetail(id) {
+  const panel = document.getElementById('detail-panel');
+  if (activeId === id) {
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    document.querySelectorAll('.stage-card').forEach(c => c.style.outline = '');
+    activeId = null;
+    return;
+  }
+  activeId = id;
+  document.querySelectorAll('.stage-card').forEach(c => c.style.outline = '');
+  const card = document.getElementById(`card-${id}`);
+  card.style.outline = '2px solid #1a1a2e';
+  card.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  const s = stages.find(x => x.id === id);
+  const subStepHtml = s.subSteps.map(ss =>
+    `<div style="margin-bottom:10px"><strong style="font-size:12px;color:#1a1a2e">${ss.name}</strong><p style="margin-top:3px">${ss.desc}</p></div>`
+  ).join('');
+
+  const settingsHtml = s.settings.length ? s.settings.map(st =>
+    `<div class="setting-row"><span class="setting-name">${st.name}</span><span class="setting-val">${st.val}</span></div>
+     <div class="setting-effect">${st.effect}</div>`
+  ).join('') : '<p style="color:#999;font-size:12px">No tunable settings for this stage.</p>';
+
+  const riskHtml = s.risks.length ? `<ul>${s.risks.map(r => `<li>${r}</li>`).join('')}</ul>` : '<p style="color:#999;font-size:12px">No specific failure modes documented.</p>';
+
+  panel.innerHTML = `
+    <div class="detail-header">
+      <h2>${s.num} — ${s.title}</h2>
+      <button onclick="toggleDetail('${id}')">Close ×</button>
+    </div>
+    <div class="detail-body">
+      <div>
+        <div class="section-box" style="margin-bottom:12px">
+          <h3>What it does</h3>
+          <p>${s.what}</p>
+        </div>
+        <div class="section-box" style="margin-bottom:12px">
+          <h3>Step by step inside this stage</h3>
+          ${subStepHtml}
+        </div>
+        <div class="section-box">
+          <h3>Failure modes &amp; risks</h3>
+          ${riskHtml}
+          ${s.impact ? `<div class="alert alert-good" style="margin-top:10px"><strong>Impact:</strong> ${s.impact}</div>` : ''}
+        </div>
+      </div>
+      <div>
+        <div class="section-box" style="margin-bottom:12px">
+          <h3>Settings that control this stage</h3>
+          ${settingsHtml}
+        </div>
+        <div class="section-box" style="margin-bottom:12px">
+          <h3>What to look for in logs</h3>
+          <p style="margin-bottom:6px"><strong style="font-size:12px">Timing bucket:</strong> <code>${s.logField}</code></p>
+          <p style="margin-bottom:6px"><strong style="font-size:12px">Match method prefix:</strong> <code>${s.logMethod}</code></p>
+          ${s.logNote ? `<div class="alert alert-info" style="margin-top:8px">${s.logNote}</div>` : ''}
+          <div class="log-example">${s.logExample}</div>
+        </div>
+      </div>
+    </div>`;
+  panel.classList.add('open');
+  setTimeout(() => panel.scrollIntoView({behavior:'smooth', block:'start'}), 50);
+}
+
+function showSection(name) {
+  document.querySelectorAll('[id^="sec-"]').forEach(el => el.style.display = 'none');
+  document.getElementById('sec-' + name).style.display = 'block';
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+buildGrid();
+</script>
+</body>
+</html>
